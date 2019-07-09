@@ -1,0 +1,29 @@
+---
+
+- name: Allow dot files
+  copy: src=YesFile dest=/etc/pure-ftpd/conf/AllowDotFiles
+  notify:
+    - restart ftpd
+
+- name: Allow chroot everyone
+  copy: src=YesFile dest=/etc/pure-ftpd/conf/ChrootEveryone
+  notify:
+    - restart ftpd
+
+- name: Disable unneeded authentiations
+  file:
+    dest: /etc/pure-ftpd/auth/{{ item }}
+    state: absent
+  with_items:
+   - 65unix
+   - 70pam
+
+- name: Disallow unneeded authentications
+  file:
+    dest: /etc/pure-ftpd/conf/{{ item }}
+    state: absent
+  with_items:
+    - PAMAuthentication
+    - UnixAuthentication
+  notify:
+    - restart ftpd

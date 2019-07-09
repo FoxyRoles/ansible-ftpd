@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "$CERTBOT_DOMAIN" != "{{ ansible_fqdn }}" ]; then
+    exit 0
+fi
+
+CERT_DIR=/etc/letsencrypt/live/{{ ansible_fqdn }}
+PURE_CERT=/etc/ssl/private/pure-ftpd.pem
+
+cat $CERT_DIR/privkey.pem $CERT_DIR/fullchain.pem > $PURE_CERT
+chmod 600 $PURE_CERT
+
+if [ -f "/usr/sbin/pure-ftpd" ]; then
+    systemctl restart pure-ftpd
+fi
+if [ -f "/usr/sbin/pure-ftpd-mysql" ]; then
+    systemctl restart pure-ftpd-mysql
+fi

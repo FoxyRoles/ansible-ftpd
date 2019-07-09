@@ -1,0 +1,17 @@
+---
+
+- import_tasks: install_puredb.yml
+  when: pure_user_database == "puredb"
+- import_tasks: install_mysql.yml
+  when: pure_user_database == "mysql"
+
+# - import_tasks: database.yml
+#   when: pure_user_database == "mysql"
+
+- import_tasks: configuration.yml
+- import_tasks: configuration_mysql.yml
+  when: pure_user_database == "mysql"
+- import_tasks: configuration_puredb.yml
+  when: pure_user_database != "mysql"
+
+- import_tasks: tls.yml

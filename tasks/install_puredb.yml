@@ -1,0 +1,12 @@
+---
+
+- name: pure-ftpd is installed
+  apt:
+    name: pure-ftpd
+    state: present
+  
+- name: pure-ftpd is running
+  service:
+    name: pure-ftpd
+    state: started
+    enabled: yes

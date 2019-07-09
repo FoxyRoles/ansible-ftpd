@@ -1,0 +1,23 @@
+---
+
+- name: Create MySQL configuration
+  template:
+    src: mysql.conf.j2
+    dest: /etc/pure-ftpd/db/mysql.conf
+  notify:
+    - restart ftpd
+
+- name: Enable MySQL authentiation
+  file:
+    src: ../conf/MySQLConfigFile
+    dest: /etc/pure-ftpd/auth/30mysql
+    state: link
+  notify:
+    - restart ftpd
+
+- name: Disallow PureDB authentication
+  file:
+    dest: /etc/pure-ftpd/conf/PureDB
+    state: absent
+  notify:
+    - restart ftpd

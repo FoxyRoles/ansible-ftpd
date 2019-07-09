@@ -1,0 +1,9 @@
+---
+
+- name: Enable PureDB authentiation
+  file:
+    src: ../conf/PureDB
+    dest: /etc/pure-ftpd/auth/10PureDB
+    state: link
+  notify:
+    - restart ftpd

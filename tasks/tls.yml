@@ -1,0 +1,45 @@
+---
+
+- name: Check dhparams are generated
+  stat: path="{{ pure_dhparams_path }}"
+  register: dhparams
+
+- name: Generate dhparams
+  command: "openssl dhparam -out {{ pure_dhparams_path }} 2048"
+  when: dhparams.stat.exists == False
+  notify:
+   - restart ftpd
+
+- name: Check certificate is present
+  stat: path="{{ pure_certificate_path }}"
+  register: cert
+
+- name: Check Certbot certificate is present
+  stat: path="/etc/letsencrypt/live/{{ ansible_fqdn }}/fullchain.pem"
+  register: certbot_cert
+
+- name: Generate self-signed certificate
+  command: "openssl req -x509 -nodes -newkey rsa:2048 -sha256 -subj '/C=CS/L=Prague/O=PureFTPD/CN={{ ansible_fqdn }}' -keyout {{ pure_certificate_path }} -out {{ pure_certificate_path }}"
+  when: cert.stat.exists == False and certbot_cert.stat.exists == False
+  notify:
+   - restart ftpd
+
+- name: Create Certbot deploy hook
+  template:
+    src: certbot-deploy-hook.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
+    mode: 0755
+  when: cert.stat.exists == False and certbot_cert.stat.exists == True
+  notify:
+    - restart ftpd
+
+- name: Run Certbot deploy hook
+  command: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
+  when: cert.stat.exists == False and certbot_cert.stat.exists == True
+  notify:
+    - restart ftpd
+
+- name: Allow TLS
+  copy: src=TLS dest=/etc/pure-ftpd/conf/TLS
+  notify:
+   - restart ftpd

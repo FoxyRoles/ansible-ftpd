@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+
+MYSQLServer     {{ pure_mysql_host }}
+MYSQLUser       {{ pure_mysql_user }}
+MYSQLPassword   {{ pure_mysql_pwd }}
+MYSQLDatabase   {{ pure_mysql_db }}
+MYSQLCrypt      {{ pure_pwd_hash }}
+
+MYSQLGetPW      SELECT `{{ pure_pwd_field }}` FROM `{{ pure_user_table }}` WHERE `{{ pure_user_field }}` = '\L'
+MYSQLGetDir     SELECT `{{ pure_dir_field }}` FROM `{{ pure_user_table }}` WHERE `{{ pure_user_field }}` = '\L'
+
+MYSQLDefaultUID {{ pure_default_uid }}
+MYSQLDefaultGID {{ pure_default_gid }}

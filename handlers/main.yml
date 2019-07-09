@@ -1,0 +1,7 @@
+---
+
+- import_tasks: pure-ftpd-mysql.yml
+  when: pure_user_database == "mysql"
+
+- import_tasks: pure-ftpd.yml
+  when: pure_user_database != "mysql"

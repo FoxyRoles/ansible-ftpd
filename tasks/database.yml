@@ -1,0 +1,31 @@
+---
+
+- name: packages required for ansible mysql modules are present
+  apt:
+    pkg: python3-pymysql
+    state: present
+
+- name: Copy user_table.sql
+  template:
+    src: user_table.sql.j2
+    dest: /tmp/user_table.sql
+
+- name: Create pure-ftpd database
+  mysql_db:
+    name: "{{ pure_mysql_db }}"
+    collation: "utf8_bin"
+    state: present
+
+- name: Import pure-ftpd database
+  mysql_db:
+    name: "{{ pure_mysql_db }}"
+    state: import
+    target: /tmp/user_table.sql
+
+- name: Create pure-ftpd database user
+  mysql_user:
+    name: "{{ pure_mysql_user }}"
+    password: "{{ pure_mysql_pwd }}"
+    priv: "{{ pure_mysql_db }}.*:SELECT"
+    host: "{{ pure_mysql_host }}"
+    state: present

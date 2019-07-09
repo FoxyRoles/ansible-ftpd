@@ -1,0 +1,12 @@
+---
+
+- name: pure-ftpd-mysql is installed
+  apt:
+    name: pure-ftpd-mysql
+    state: present
+  
+- name: pure-ftpd-mysql is running
+  service:
+    name: pure-ftpd-mysql
+    state: started
+    enabled: yes

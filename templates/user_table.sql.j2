@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS `{{ pure_user_table }}` (
+  `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  `{{ pure_user_field }}` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `{{ pure_pwd_field }}` char(41) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `{{ pure_dir_field }}` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '/home/web',
+  UNIQUE KEY (`{{ pure_user_field }}`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
