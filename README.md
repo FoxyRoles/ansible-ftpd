@@ -1,6 +1,6 @@
-# ansible-composer
+# ansible-ftpd
 
-Setups PureFTPd.
+Setups PureFTPd with SSL. Uses Certbot cerficates if available, generates self-signed if not.
 
 ### Example playbook
 ```yaml
