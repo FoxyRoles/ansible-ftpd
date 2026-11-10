@@ -1,12 +1,12 @@
 ---
 
 - name: packages required for ansible mysql modules are present
-  apt:
+  ansible.builtin.apt:
     pkg: python3-pymysql
     state: present
 
 - name: Copy user_table.sql
-  template:
+  ansible.builtin.template:
     src: user_table.sql.j2
     dest: /tmp/user_table.sql
 

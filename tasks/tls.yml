@@ -1,45 +1,90 @@
 ---
 
 - name: Check dhparams are generated
-  stat: path="{{ pure_dhparams_path }}"
+  ansible.builtin.stat:
+    path: "{{ pure_dhparams_path }}"
   register: dhparams
 
 - name: Generate dhparams
-  command: "openssl dhparam -out {{ pure_dhparams_path }} 2048"
-  when: dhparams.stat.exists == False
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - dhparam
+      - -out
+      - "{{ pure_dhparams_path }}"
+      - '2048'
+    creates: "{{ pure_dhparams_path }}"
+  when: not dhparams.stat.exists
   notify:
-   - restart ftpd
+    - restart ftpd
 
 - name: Check certificate is present
-  stat: path="{{ pure_certificate_path }}"
+  ansible.builtin.stat:
+    path: "{{ pure_certificate_path }}"
   register: cert
 
 - name: Check Certbot certificate is present
-  stat: path="/etc/letsencrypt/live/{{ ansible_fqdn }}/fullchain.pem"
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ ansible_facts['fqdn'] }}/fullchain.pem"
   register: certbot_cert
 
 - name: Generate self-signed certificate
-  command: "openssl req -x509 -nodes -newkey rsa:2048 -sha256 -subj '/C=CS/L=Prague/O=PureFTPD/CN={{ ansible_fqdn }}' -keyout {{ pure_certificate_path }} -out {{ pure_certificate_path }}"
-  when: cert.stat.exists == False and certbot_cert.stat.exists == False
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - req
+      - -x509
+      - -nodes
+      - -newkey
+      - rsa:2048
+      - -sha256
+      - -subj
+      - "/C=CZ/L=Prague/O=PureFTPD/CN={{ ansible_facts['fqdn'] }}"
+      - -keyout
+      - "{{ pure_certificate_path }}"
+      - -out
+      - "{{ pure_certificate_path }}"
+    creates: "{{ pure_certificate_path }}"
+  when: not cert.stat.exists and not certbot_cert.stat.exists
   notify:
-   - restart ftpd
+    - restart ftpd
+
+- name: Ensure Certbot deploy hook directory exists
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: '0755'
+  when: certbot_cert.stat.exists
 
 - name: Create Certbot deploy hook
-  template:
+  ansible.builtin.template:
     src: certbot-deploy-hook.j2
     dest: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
-    mode: 0755
-  when: cert.stat.exists == False and certbot_cert.stat.exists == True
-  notify:
-    - restart ftpd
+    mode: '0755'
+  register: certbot_hook
+  when: certbot_cert.stat.exists
 
 - name: Run Certbot deploy hook
-  command: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
-  when: cert.stat.exists == False and certbot_cert.stat.exists == True
+  ansible.builtin.command: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
+  environment:
+    RENEWED_LINEAGE: "/etc/letsencrypt/live/{{ ansible_facts['fqdn'] }}"
+  when: certbot_cert.stat.exists and (not cert.stat.exists or certbot_hook.changed)
+  changed_when: true
   notify:
     - restart ftpd
 
+- name: Set certificate permissions
+  ansible.builtin.file:
+    path: "{{ pure_certificate_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+  when: cert.stat.exists or not ansible_check_mode
+
 - name: Allow TLS
-  copy: src=TLS dest=/etc/pure-ftpd/conf/TLS
+  ansible.builtin.copy:
+    src: TLS
+    dest: /etc/pure-ftpd/conf/TLS
+    mode: '0644'
   notify:
-   - restart ftpd
+    - restart ftpd

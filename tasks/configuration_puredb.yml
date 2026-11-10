@@ -1,7 +1,36 @@
 ---
 
-- name: Enable PureDB authentiation
-  file:
+- name: Initialize PureDB password file
+  ansible.builtin.copy:
+    content: ''
+    dest: "{{ pure_passwd_path }}"
+    force: false
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Initialize PureDB database
+  ansible.builtin.command:
+    argv:
+      - pure-pw
+      - mkdb
+      - "{{ pure_pdb_path }}"
+      - -f
+      - "{{ pure_passwd_path }}"
+    creates: "{{ pure_pdb_path }}"
+  notify:
+    - restart ftpd
+
+- name: Configure PureDB database path
+  ansible.builtin.copy:
+    content: "{{ pure_pdb_path }}\n"
+    dest: /etc/pure-ftpd/conf/PureDB
+    mode: '0644'
+  notify:
+    - restart ftpd
+
+- name: Enable PureDB authentication
+  ansible.builtin.file:
     src: ../conf/PureDB
     dest: /etc/pure-ftpd/auth/10PureDB
     state: link

@@ -1,40 +1,44 @@
 ---
 
 - name: Allow dot files
-  copy:
+  ansible.builtin.copy:
     src: YesFile
     dest: /etc/pure-ftpd/conf/AllowDotFiles
+    mode: '0644'
   notify:
     - restart ftpd
 
 - name: Allow chroot everyone
-  copy:
+  ansible.builtin.copy:
     src: YesFile
     dest: /etc/pure-ftpd/conf/ChrootEveryone
+    mode: '0644'
   notify:
     - restart ftpd
 
 - name: Set passive port range
-  template:
+  ansible.builtin.template:
     src: PassivePortRange.j2
     dest: /etc/pure-ftpd/conf/PassivePortRange
     mode: '0644'
   notify:
     - restart ftpd
 
-- name: Disable unneeded authentiations
-  file:
+- name: Disable unneeded authentications
+  ansible.builtin.file:
     dest: /etc/pure-ftpd/auth/{{ item }}
     state: absent
-  with_items:
-   - 65unix
-   - 70pam
+  loop:
+    - 65unix
+    - 70pam
+  notify:
+    - restart ftpd
 
 - name: Disallow unneeded authentications
-  file:
+  ansible.builtin.file:
     dest: /etc/pure-ftpd/conf/{{ item }}
     state: absent
-  with_items:
+  loop:
     - PAMAuthentication
     - UnixAuthentication
   notify:

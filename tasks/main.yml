@@ -1,17 +1,23 @@
 ---
 
-- import_tasks: install_puredb.yml
+- ansible.builtin.import_tasks: install_puredb.yml
   when: pure_user_database == "puredb"
-- import_tasks: install_mysql.yml
+- ansible.builtin.import_tasks: install_mysql.yml
   when: pure_user_database == "mysql"
 
 # - import_tasks: database.yml
 #   when: pure_user_database == "mysql"
 
-- import_tasks: configuration.yml
-- import_tasks: configuration_mysql.yml
+- ansible.builtin.import_tasks: configuration.yml
+- ansible.builtin.import_tasks: configuration_mysql.yml
   when: pure_user_database == "mysql"
-- import_tasks: configuration_puredb.yml
+- ansible.builtin.import_tasks: configuration_puredb.yml
   when: pure_user_database != "mysql"
 
-- import_tasks: tls.yml
+- ansible.builtin.import_tasks: tls.yml
+
+- name: Ensure FTP service is running
+  ansible.builtin.service:
+    name: "{{ 'pure-ftpd-mysql' if pure_user_database == 'mysql' else 'pure-ftpd' }}"
+    state: started
+    enabled: true

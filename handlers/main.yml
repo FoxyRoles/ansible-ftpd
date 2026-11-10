@@ -1,7 +1,6 @@
 ---
 
-- import_tasks: pure-ftpd-mysql.yml
-  when: pure_user_database == "mysql"
-
-- import_tasks: pure-ftpd.yml
-  when: pure_user_database != "mysql"
+- name: restart ftpd
+  ansible.builtin.service:
+    name: "{{ 'pure-ftpd-mysql' if pure_user_database == 'mysql' else 'pure-ftpd' }}"
+    state: restarted

@@ -2,17 +2,20 @@
 
 set -euo pipefail
 
-RENEWED_LINEAGE=${RENEWED_LINEAGE:-/etc/letsencrypt/live/{{ ansible_fqdn }}}
+RENEWED_LINEAGE=${RENEWED_LINEAGE:-{{ ('/etc/letsencrypt/live/' ~ ansible_facts['fqdn']) | quote }}}
 CERTIFICATE=$(basename "$RENEWED_LINEAGE")
 PURE_CERT={{ pure_certificate_path | quote }}
 
-if [ "$CERTIFICATE" != "{{ ansible_fqdn }}" ]; then
+if [ "$CERTIFICATE" != {{ ansible_facts['fqdn'] | quote }} ]; then
     exit 0
 fi
 
 umask 077
-cat "$RENEWED_LINEAGE/privkey.pem" "$RENEWED_LINEAGE/fullchain.pem" > "$PURE_CERT"
-chmod 600 "$PURE_CERT"
+TEMP_CERT=$(mktemp "${PURE_CERT}.XXXXXX")
+trap 'rm -f "$TEMP_CERT"' EXIT
+cat "$RENEWED_LINEAGE/privkey.pem" "$RENEWED_LINEAGE/fullchain.pem" > "$TEMP_CERT"
+chmod 600 "$TEMP_CERT"
+mv -f "$TEMP_CERT" "$PURE_CERT"
 
 if [ -f "/usr/sbin/pure-ftpd" ]; then
     systemctl restart pure-ftpd

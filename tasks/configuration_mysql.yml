@@ -1,14 +1,16 @@
 ---
 
 - name: Create MySQL configuration
-  template:
+  ansible.builtin.template:
     src: mysql.conf.j2
     dest: /etc/pure-ftpd/db/mysql.conf
+    mode: '0600'
+  no_log: true
   notify:
     - restart ftpd
 
-- name: Enable MySQL authentiation
-  file:
+- name: Enable MySQL authentication
+  ansible.builtin.file:
     src: ../conf/MySQLConfigFile
     dest: /etc/pure-ftpd/auth/30mysql
     state: link
@@ -16,7 +18,7 @@
     - restart ftpd
 
 - name: Disallow PureDB authentication
-  file:
+  ansible.builtin.file:
     dest: /etc/pure-ftpd/conf/PureDB
     state: absent
   notify:

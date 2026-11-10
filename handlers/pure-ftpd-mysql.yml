@@ -1,4 +1,0 @@
----
-
-- name: restart ftpd
-  service: name=pure-ftpd-mysql state=restarted
