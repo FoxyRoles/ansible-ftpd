@@ -1,12 +1,24 @@
 ---
 
 - name: Allow dot files
-  copy: src=YesFile dest=/etc/pure-ftpd/conf/AllowDotFiles
+  copy:
+    src: YesFile
+    dest: /etc/pure-ftpd/conf/AllowDotFiles
   notify:
     - restart ftpd
 
 - name: Allow chroot everyone
-  copy: src=YesFile dest=/etc/pure-ftpd/conf/ChrootEveryone
+  copy:
+    src: YesFile
+    dest: /etc/pure-ftpd/conf/ChrootEveryone
+  notify:
+    - restart ftpd
+
+- name: Set passive port range
+  template:
+    src: PassivePortRange.j2
+    dest: /etc/pure-ftpd/conf/PassivePortRange
+    mode: '0644'
   notify:
     - restart ftpd
 

@@ -2,7 +2,7 @@
 
 pure_user_database: puredb
 
-pure_mysql_host: localhost
+pure_mysql_host: 127.0.0.1
 pure_mysql_user: server
 pure_mysql_db: server
 
@@ -17,11 +17,13 @@ pure_pwd_field: passwd
 pure_dir_field: dir
 
 pure_pwd_hash: crypt
-pure_default_uid: 1001
-pure_default_gid: 1001
+pure_default_uid: 1000
+pure_default_gid: 1000
 
 pure_dhparams_path: /etc/ssl/private/pure-ftpd-dhparams.pem
 pure_certificate_path: /etc/ssl/private/pure-ftpd.pem
 
 pure_passwd_path: /etc/pure-ftpd/pureftpd.passwd
 pure_pdb_path: /etc/pure-ftpd/pureftpd.pdb
+
+pure_passive_port_range: "6000 6100"

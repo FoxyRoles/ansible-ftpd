@@ -1,14 +1,18 @@
 #!/bin/bash
 
-if [ "$CERTBOT_DOMAIN" != "{{ ansible_fqdn }}" ]; then
+set -euo pipefail
+
+RENEWED_LINEAGE=${RENEWED_LINEAGE:-/etc/letsencrypt/live/{{ ansible_fqdn }}}
+CERTIFICATE=$(basename "$RENEWED_LINEAGE")
+PURE_CERT={{ pure_certificate_path | quote }}
+
+if [ "$CERTIFICATE" != "{{ ansible_fqdn }}" ]; then
     exit 0
 fi
 
-CERT_DIR=/etc/letsencrypt/live/{{ ansible_fqdn }}
-PURE_CERT=/etc/ssl/private/pure-ftpd.pem
-
-cat $CERT_DIR/privkey.pem $CERT_DIR/fullchain.pem > $PURE_CERT
-chmod 600 $PURE_CERT
+umask 077
+cat "$RENEWED_LINEAGE/privkey.pem" "$RENEWED_LINEAGE/fullchain.pem" > "$PURE_CERT"
+chmod 600 "$PURE_CERT"
 
 if [ -f "/usr/sbin/pure-ftpd" ]; then
     systemctl restart pure-ftpd
