@@ -1,20 +1,10 @@
 ---
 
-- name: Check dhparams are generated
-  ansible.builtin.stat:
-    path: "{{ pure_dhparams_path }}"
-  register: dhparams
-
 - name: Generate dhparams
-  ansible.builtin.command:
-    argv:
-      - openssl
-      - dhparam
-      - -out
-      - "{{ pure_dhparams_path }}"
-      - '2048'
-    creates: "{{ pure_dhparams_path }}"
-  when: not dhparams.stat.exists
+  community.crypto.openssl_dhparam:
+    path: "{{ pure_dhparams_path }}"
+    size: 2048
+    mode: '0644'
   notify:
     - restart ftpd
 
