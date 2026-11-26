@@ -2,11 +2,11 @@
 
 set -euo pipefail
 
-RENEWED_LINEAGE=${RENEWED_LINEAGE:-{{ ('/etc/letsencrypt/live/' ~ ansible_facts['fqdn']) | quote }}}
-CERTIFICATE=$(basename "$RENEWED_LINEAGE")
+CERTBOT_DIRECTORY={{ pure_tls_certbot_directory | quote }}
+RENEWED_LINEAGE=${RENEWED_LINEAGE:-$CERTBOT_DIRECTORY}
 PURE_CERT={{ pure_certificate_path | quote }}
 
-if [ "$CERTIFICATE" != {{ ansible_facts['fqdn'] | quote }} ]; then
+if [ "${RENEWED_LINEAGE%/}" != "$CERTBOT_DIRECTORY" ]; then
     exit 0
 fi
 

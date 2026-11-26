@@ -11,19 +11,19 @@
     dest: /tmp/user_table.sql
 
 - name: Create pure-ftpd database
-  mysql_db:
+  ansible.mysql.mysql_db:
     name: "{{ pure_mysql_db }}"
     collation: "utf8_bin"
     state: present
 
 - name: Import pure-ftpd database
-  mysql_db:
+  ansible.mysql.mysql_db:
     name: "{{ pure_mysql_db }}"
     state: import
     target: /tmp/user_table.sql
 
 - name: Create pure-ftpd database user
-  mysql_user:
+  ansible.mysql.mysql_user:
     name: "{{ pure_mysql_user }}"
     password: "{{ pure_mysql_pwd }}"
     priv: "{{ pure_mysql_db }}.*:SELECT"

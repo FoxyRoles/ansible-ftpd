@@ -1,0 +1,112 @@
+---
+
+- name: Manage the fallback certificate bundle
+  vars:
+    pure_tls_selfsigned_key_path: "{{ pure_certificate_path }}.key"
+    pure_tls_selfsigned_cert_path: "{{ pure_certificate_path }}.crt"
+    pure_tls_bundle_is_managed: >-
+      {{ pure_tls_bundle_info.public_key_fingerprints.sha256 is defined and
+        pure_tls_bundle_info.public_key_fingerprints.sha256 ==
+        (pure_tls_selfsigned_key_info.public_key_fingerprints.sha256 | default(none)) and
+        pure_tls_bundle_info.subject_ordered == pure_tls_bundle_info.issuer_ordered }}
+  block:
+    - name: Check for an existing FTP certificate bundle
+      ansible.builtin.stat:
+        path: "{{ pure_certificate_path }}"
+        follow: true
+        get_checksum: false
+      register: pure_tls_bundle
+
+    - name: Check for the role-managed self-signed key
+      ansible.builtin.stat:
+        path: "{{ pure_tls_selfsigned_key_path }}"
+        get_checksum: false
+      register: pure_tls_selfsigned_key
+
+    - name: Identify an existing bundle that uses the role-managed key
+      when:
+        - pure_tls_bundle.stat.exists
+        - pure_tls_selfsigned_key.stat.exists
+      block:
+        - name: Read the existing bundle certificate
+          community.crypto.x509_certificate_info:
+            path: "{{ pure_certificate_path }}"
+          register: pure_tls_bundle_info
+          failed_when: false
+
+        - name: Read the role-managed key fingerprint
+          community.crypto.openssl_privatekey_info:
+            path: "{{ pure_tls_selfsigned_key_path }}"
+          register: pure_tls_selfsigned_key_info
+          failed_when: false
+
+    - name: Set permissions on an existing certificate bundle
+      ansible.builtin.file:
+        path: "{{ pure_certificate_path }}"
+        owner: root
+        group: root
+        mode: '0600'
+      when:
+        - pure_tls_bundle.stat.exists
+        - not pure_tls_bundle_is_managed
+
+    - name: Issue or renew the managed self-signed certificate
+      when: not pure_tls_bundle.stat.exists or pure_tls_bundle_is_managed
+      block:
+        - name: Maintain the self-signed private key
+          community.crypto.openssl_privatekey:
+            path: "{{ pure_tls_selfsigned_key_path }}"
+            type: RSA
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Check for an existing managed certificate
+          ansible.builtin.stat:
+            path: "{{ pure_tls_selfsigned_cert_path }}"
+            get_checksum: false
+          register: pure_tls_selfsigned_cert
+
+        - name: Check whether the managed certificate expires soon
+          community.crypto.x509_certificate_info:
+            path: "{{ pure_tls_selfsigned_cert_path }}"
+            valid_at:
+              renewal: '+30d'
+          register: pure_tls_selfsigned_info
+          when: pure_tls_selfsigned_cert.stat.exists
+          failed_when: false
+
+        - name: Sign the certificate when the key is available
+          when: not ansible_check_mode or pure_tls_selfsigned_key.stat.exists
+          block:
+            - name: Build the self-signed certificate request
+              community.crypto.openssl_csr_pipe:
+                privatekey_path: "{{ pure_tls_selfsigned_key_path }}"
+                country_name: CZ
+                locality_name: Prague
+                organization_name: PureFTPD
+                common_name: "{{ ansible_facts['fqdn'] }}"
+              register: pure_tls_selfsigned_csr
+              changed_when: false
+
+            - name: Write the ten-year self-signed certificate
+              community.crypto.x509_certificate:
+                path: "{{ pure_tls_selfsigned_cert_path }}"
+                privatekey_path: "{{ pure_tls_selfsigned_key_path }}"
+                csr_content: "{{ pure_tls_selfsigned_csr.csr }}"
+                provider: selfsigned
+                selfsigned_not_after: '+3650d'
+                force: "{{ not (pure_tls_selfsigned_info.valid_at.renewal | default(false)) }}"
+                owner: root
+                group: root
+                mode: '0644'
+
+        - name: Install the self-signed certificate bundle
+          ansible.builtin.import_tasks: tls-bundle.yml
+          vars:
+            pure_tls_key_path: "{{ pure_tls_selfsigned_key_path }}"
+            pure_tls_chain_path: "{{ pure_tls_selfsigned_cert_path }}"
+          when: >-
+            not ansible_check_mode or
+            (pure_tls_selfsigned_key.stat.exists and pure_tls_selfsigned_cert.stat.exists)

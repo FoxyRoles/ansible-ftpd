@@ -1,0 +1,21 @@
+---
+
+- name: Install the Certbot certificate bundle
+  ansible.builtin.import_tasks: tls-bundle.yml
+  vars:
+    pure_tls_key_path: "{{ pure_tls_certbot_directory }}/privkey.pem"
+    pure_tls_chain_path: "{{ pure_tls_certbot_directory }}/fullchain.pem"
+
+- name: Ensure the Certbot deploy hook directory exists
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: '0755'
+  register: pure_tls_hook_directory
+
+- name: Install the Certbot deploy hook
+  ansible.builtin.template:
+    src: certbot-deploy-hook.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/pure-ftpd
+    mode: '0755'
+  when: not ansible_check_mode or pure_tls_hook_directory is not changed

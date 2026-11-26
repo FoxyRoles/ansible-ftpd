@@ -1,0 +1,51 @@
+---
+
+- name: Read the installed Pure-FTPd package version
+  ansible.builtin.command:
+    argv:
+      - dpkg-query
+      - --show
+      - '--showformat=${db:Status-Status} ${Version}'
+      - "{{ 'pure-ftpd-mysql' if pure_user_database == 'mysql' else 'pure-ftpd' }}"
+    expand_argument_vars: false
+  register: pure_tls_ftpd_package
+  changed_when: false
+  failed_when: pure_tls_ftpd_package.rc not in [0, 1]
+  check_mode: false
+
+- name: Manage the DH parameters file for the installed version
+  when: pure_tls_ftpd_package.stdout.startswith('installed ')
+  vars:
+    pure_tls_ftpd_version: >-
+      {{ pure_tls_ftpd_package.stdout.split()[1]
+        | regex_replace('^[0-9]+:', '') | regex_replace('-[^-]*$', '') }}
+    pure_tls_supports_dhparams: >-
+      {{ pure_tls_ftpd_version is version('1.0.38', '>=') and
+        pure_tls_ftpd_version is version('1.0.50', '<') }}
+  block:
+    - name: Generate DH parameters for Pure-FTPd versions that read the file
+      community.crypto.openssl_dhparam:
+        path: "{{ pure_dhparams_path }}"
+        size: 2048
+        mode: '0644'
+      when:
+        - pure_tls_supports_dhparams
+        - not ansible_check_mode or pure_tls_cryptography is not changed
+      notify: restart ftpd
+
+    - name: Clean up the unused DH parameters file
+      when: not pure_tls_supports_dhparams
+      block:
+        - name: Inspect the old DH parameters path
+          ansible.builtin.stat:
+            path: "{{ pure_dhparams_path }}"
+            get_checksum: false
+          register: pure_tls_old_dhparams
+
+        - name: Remove the old DH parameters file
+          ansible.builtin.file:
+            path: "{{ pure_dhparams_path }}"
+            state: absent
+          when:
+            - pure_tls_old_dhparams.stat.exists
+            - not pure_tls_old_dhparams.stat.isdir
