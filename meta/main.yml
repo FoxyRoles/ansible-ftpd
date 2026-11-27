@@ -1,0 +1,26 @@
+---
+
+galaxy_info:
+  namespace: sunfoxcz
+  role_name: ftpd
+  author: Tomas Jacik
+  description: Install and configure Pure-FTPd with TLS and PureDB or MySQL authentication.
+  company: sunfoxcz
+  license: MIT
+  min_ansible_version: '2.19'
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+        - resolute
+  galaxy_tags:
+    - ftp
+    - tls
+
+dependencies: []

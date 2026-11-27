@@ -1,3 +1,4 @@
+{{ pure_managed_comment | comment(decoration='-- ', prefix='', postfix='') | trim }}
 CREATE TABLE IF NOT EXISTS `{{ pure_user_table }}` (
   `id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `{{ pure_user_field }}` char(32) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,

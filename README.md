@@ -27,6 +27,11 @@ the service.
 The PureDB backend initializes missing password and database files before
 starting the service. Existing accounts and databases are preserved.
 
+## Requirements
+
+- `ansible-core` 2.19 or newer.
+- The `ansible.mysql` collection when using the MySQL backend.
+
 ### Example playbook
 ```yaml
 ---

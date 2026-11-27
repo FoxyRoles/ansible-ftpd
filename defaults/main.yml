@@ -1,7 +1,7 @@
 ---
 
 pure_user_database: puredb
-pure_managed_comment: Ansible managed
+pure_managed_comment: "{{ ansible_managed | default('Ansible managed') }}"
 
 pure_mysql_host: 127.0.0.1
 pure_mysql_user: server
